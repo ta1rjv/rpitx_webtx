@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WebVFO – rpitx Verici</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel: #16213e;
+            --text: #e0e0e0;
+            --accent: #e94560;
+            --green: #27ae60;
+            --red: #e74c3c;
+            --border: #0f3460;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+        }
+        .freq-display {
+            background: #000;
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        .freq-display span { font-size: 1rem; color: #aaa; }
+        .panel {
+            background: var(--panel);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        select, input[type="number"], .btn-small, #initMicBtn {
+            background: #0f3460;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+        .btn-small, #initMicBtn {
+            cursor: pointer;
+            background: var(--accent);
+            border: none;
+        }
+        .btn-small:active, #initMicBtn:active { background: #c0392b; }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+        #ptt {
+            width: 100%;
+            height: 80px;
+            border-radius: 15px;
+            border: none;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            background: #555;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #ptt.tx-active { background: var(--red); }
+        #ptt:disabled { background: #333; cursor: not-allowed; }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .led {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #555;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .led.on { background: var(--red); }
+        .led.off { background: #555; }
+        .vfo-switch {
+            display: flex;
+            gap: 5px;
+        }
+        .vfo-btn {
+            flex: 1;
+            background: var(--border);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .vfo-btn.active { background: var(--accent); }
+        .slider-group { margin-bottom: 10px; }
+        .slider-label { display: flex; justify-content: space-between; }
+        #micStatus { color: #aaa; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="freq-display" id="freqDisplay">14.200 <span>MHz</span></div>
+
+        <div class="panel">
+            <div class="row">
+                <button id="initMicBtn" onclick="initMic()">🎤 Mikrofonu Başlat</button>
+                <span id="micStatus"></span>
+            </div>
+            <div class="row">
+                <label>VFO</label>
+                <div class="vfo-switch">
+                    <button class="vfo-btn active" id="vfoABtn" onclick="switchVFO('A')">A</button>
+                    <button class="vfo-btn" id="vfoBBtn" onclick="switchVFO('B')">B</button>
+                </div>
+            </div>
+            <div class="row">
+                <label>Bant</label>
+                <select id="band" onchange="applyBand()">
+                    <option value="160m">160m</option>
+                    <option value="80m">80m</option>
+                    <option value="40m">40m</option>
+                    <option value="20m" selected>20m</option>
+                    <option value="15m">15m</option>
+                    <option value="10m">10m</option>
+                    <option value="2m">2m</option>
+                    <option value="70cm">70cm</option>
+                </select>
+            </div>
+            <div class="row">
+                <label>Frekans (MHz)</label>
+                <input type="number" id="freqInput" value="14.200" step="0.001" min="0.1" max="1000" style="width:100px;">
+                <label>Adım</label>
+                <select id="step" onchange="updateStep()">
+                    <option value="1">1 kHz</option>
+                    <option value="10">10 kHz</option>
+                    <option value="100">100 kHz</option>
+                    <option value="1000" selected>1 MHz</option>
+                </select>
+            </div>
+            <div class="row">
+                <label>Mod</label>
+                <select id="mode">
+                    <option value="USB" selected>USB</option>
+                    <option value="LSB">LSB</option>
+                    <option value="FM">FM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="slider-group">
+                <div class="slider-label"><span>🎤 Ses Kazancı</span><span id="gainVal">0.8</span></div>
+                <input type="range" id="gainSlider" min="0.1" max="2.0" step="0.1" value="0.8" oninput="updateGain(this.value)">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label"><span>⚡ TX Gücü</span><span id="powerVal">%100</span></div>
+                <input type="range" id="powerSlider" min="0.1" max="1.0" step="0.1" value="1.0" oninput="updatePower(this.value)">
+            </div>
+        </div>
+
+        <button id="ptt" 
+                onmousedown="startTx()" onmouseup="stopTx()" onmouseleave="stopTx()"
+                ontouchstart="event.preventDefault(); startTx()" ontouchend="event.preventDefault(); stopTx()"
+                disabled>
+            PTT
+        </button>
+
+        <div class="status-bar">
+            <span><span class="led off" id="txLed"></span> TX</span>
+            <span id="txStatus">Beklemede</span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.min.js"></script>
+    <script>
+        // HTTP Polling gecikmesini engelle ve doğrudan düşük gecikmeli WebSocket protokolü ile bağlan
+        const socket = io({ transports: ['websocket'], upgrade: false });
+        
+        let isTx = false;
+        let audioContext, workletNode;
+        let currentVFO = 'A';
+        const vfoFreqs = { A: 14.200, B: 14.200 };
+        let micReady = false;
+
+        async function initMic() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { sampleRate: 48000, channelCount: 1, echoCancellation: false, noiseSuppression: false }
+                });
+                audioContext = new AudioContext({ sampleRate: 48000 });
+                await audioContext.audioWorklet.addModule('/static/mic-processor.js');
+                const source = audioContext.createMediaStreamSource(stream);
+                workletNode = new AudioWorkletNode(audioContext, 'mic-processor');
+                source.connect(workletNode);
+                workletNode.port.onmessage = (event) => {
+                    if (isTx && event.data instanceof ArrayBuffer) {
+                        socket.emit('audio_chunk', event.data);
+                    }
+                };
+                micReady = true;
+                document.getElementById('ptt').disabled = false;
+                document.getElementById('micStatus').innerText = '✅ Hazır';
+                document.getElementById('initMicBtn').disabled = true;
+            } catch (err) {
+                alert("Mikrofon erişimi başarısız: " + err.message);
+                document.getElementById('micStatus').innerText = '❌ Hata';
+            }
+        }
+
+        function switchVFO(vfo) {
+            currentVFO = vfo;
+            document.getElementById('vfoABtn').classList.toggle('active', vfo==='A');
+            document.getElementById('vfoBBtn').classList.toggle('active', vfo==='B');
+            document.getElementById('freqInput').value = vfoFreqs[vfo];
+            updateFreqDisplay();
+        }
+
+        function applyBand() {
+            const band = document.getElementById('band').value;
+            const defaults = { "160m":1.8, "80m":3.5, "40m":7.1, "20m":14.2, "15m":21.2, "10m":28.5, "2m":145.0, "70cm":433.0 };
+            if (defaults[band]) {
+                document.getElementById('freqInput').value = defaults[band];
+                vfoFreqs[currentVFO] = defaults[band];
+                updateFreqDisplay();
+            }
+        }
+
+        function updateFreqDisplay() {
+            const freq = parseFloat(document.getElementById('freqInput').value).toFixed(3);
+            document.getElementById('freqDisplay').innerHTML = `${freq} <span>MHz</span>`;
+            vfoFreqs[currentVFO] = parseFloat(freq);
+        }
+        document.getElementById('freqInput').addEventListener('input', updateFreqDisplay);
+
+        function updateStep() {
+            const step = document.getElementById('step').value;
+            document.getElementById('freqInput').step = step / 1000;
+        }
+
+        function updateGain(val) {
+            document.getElementById('gainVal').innerText = val;
+            socket.emit('update_params', { gain: parseFloat(val) });
+        }
+
+        function updatePower(val) {
+            document.getElementById('powerVal').innerText = Math.round(val*100) + '%';
+            socket.emit('update_params', { tx_power: parseFloat(val) });
+        }
+
+        function startTx() {
+            if (!micReady || isTx) return;
+            const freq = parseFloat(document.getElementById('freqInput').value);
+            const mode = document.getElementById('mode').value;
+            const gain = parseFloat(document.getElementById('gainSlider').value);
+            const tx_power = parseFloat(document.getElementById('powerSlider').value);
+            socket.emit('start_tx', { freq: freq, mode: mode, gain: gain, tx_power: tx_power });
+            isTx = true;
+            document.getElementById('ptt').classList.add('tx-active');
+            document.getElementById('txLed').classList.add('on');
+            document.getElementById('txStatus').innerText = 'TX Aktif';
+        }
+
+        function stopTx() {
+            if (!isTx) return;
+            socket.emit('stop_tx');
+            isTx = false;
+            document.getElementById('ptt').classList.remove('tx-active');
+            document.getElementById('txLed').classList.remove('on');
+            document.getElementById('txStatus').innerText = 'Beklemede';
+        }
+
+        socket.on('tx_status', (data) => {
+            if (!data.active) {
+                isTx = false;
+                document.getElementById('ptt').classList.remove('tx-active');
+                document.getElementById('txLed').classList.remove('on');
+                document.getElementById('txStatus').innerText = 'Beklemede';
+            } else {
+                if (data.freq) {
+                    document.getElementById('freqInput').value = data.freq;
+                    updateFreqDisplay();
+                }
+            }
+        });
+
+        socket.on('error', (data) => {
+            alert('Hata: ' + data.message);
+            stopTx();
+        });
+
+        updateFreqDisplay();
+        updateStep();
+    </script>
+</body>
+</html>
