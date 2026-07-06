@@ -8,17 +8,19 @@ WebTX, Raspberry Pi üzerinde `rpitx` ve `csdr` kütüphanelerini kullanarak gel
 
 # Desteklenen Donanımlar
 
-| Raspberry Model      | Status  |
+| Raspberry Modeli      | Durumu  |
 | ---------------------|:-------:|
-| Pizero|OK|
-| PizeroW|OK|
-| PiA+|OK|
-| PiB|Partial|
-| PiB+|OK|
-| P2B|OK|
-| Pi3B|OK|
-| Pi3B+|OK|
-| Pi4|In beta mode|
+| Pizero|✅|
+| PizeroW|✅|
+| PiA+|✅|
+| PiB|⚠️|
+| PiB+|✅|
+| P2B|✅|
+| Pi3B|✅|
+| Pi3B+|✅|
+| Pi4|🛠️|
+
+**rpitx**, Raspberry Pi için geliştirilmiş genel amaçlı bir radyo frekans vericisidir. Paraziti önlemek amacıyla kullanılan bir filtre haricinde herhangi bir ek donanıma ihtiyaç duymaz. **5 KHz'den 1500 MHz'e** kadar olan frekans aralığını destekler.
 
 
 ### 1. Bağımlılıkları Yükle
