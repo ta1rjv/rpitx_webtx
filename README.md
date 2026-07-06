@@ -6,6 +6,21 @@ WebTX, Raspberry Pi üzerinde `rpitx` ve `csdr` kütüphanelerini kullanarak gel
 
 ## Kurulum Adımları
 
+# Hardware
+
+| Raspberry Model      | Status  |
+| ---------------------|:-------:|
+| Pizero|OK|
+| PizeroW|OK|
+| PiA+|OK|
+| PiB|Partial|
+| PiB+|OK|
+| P2B|OK|
+| Pi3B|OK|
+| Pi3B+|OK|
+| Pi4|In beta mode|
+
+
 ### 1. Bağımlılıkları Yükle
 Sisteminizde `csdr` ve temel derleme araçlarının yüklü olduğundan emin olun:
 
@@ -78,6 +93,9 @@ Performans: PTT gecikmesini minimize etmek için işlemci önceliğini şu komut
 Mikrofon Erişimi: Mikrofon erişimi `HTTP` üzerinden çalışmaz, mutlaka oluşturduğunuz sertifika ile `HTTPS` üzerinden giriş yapın.
 
 ## ⚠️ Yasal Uyarı ve Sorumluluk Reddi
+
+![bpf](/img/bpf-warning.png)
+
 
 Bu proje **araştırma, geliştirme ve eğitim amaçlıdır**. Aşağıdaki kurallara eksiksiz uyun:
 
