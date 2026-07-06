@@ -6,8 +6,7 @@ WebTX, Raspberry Pi üzerinde `rpitx` ve `csdr` kütüphanelerini kullanarak gel
 
 ## Kurulum Adımları
 
-# Desteklenen Donanımlar
-
+**Desteklenen Donanımlar**
 | Raspberry Modeli      | Durumu  |
 | ---------------------|:-------:|
 | Pizero|✅|
