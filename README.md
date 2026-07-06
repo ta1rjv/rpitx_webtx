@@ -76,7 +76,7 @@ Tarayıcınızdan https://<IP_ADRESINIZ>:5000 adresine gidin. Tarayıcı uyarı 
 
 ```
 📂 Proje Dizini
-web_tx/
+rpitx_webtx/
 ├── server.py
 ├── static/
 │   └── mic-processor.js
