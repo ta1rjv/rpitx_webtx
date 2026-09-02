@@ -1,0 +1,90 @@
+--- a/src/sendiq.cpp
++++ b/src/sendiq.cpp
+@@ -73,6 +73,8 @@
+ -l            loop mode for file input\n\
+ -h            Use harmonic number n\n\
+ -t            IQ type (i16 default) {i16,u8,float,double}\n\
++-b            read burst size in complex samples, 1 to 4000 (default 4000)\n\
++-F            DMA FIFO size in complex samples (default 16000)\n\
+ -?            help (this help).\n\
+ \n",\
+ PROGRAM_VERSION);
+@@ -101,10 +103,12 @@
+ 	enum {typeiq_i16,typeiq_u8,typeiq_float,typeiq_double};
+ 	int InputType=typeiq_i16;
+ 	int Decimation=1;
++	int ReadBurst=-1;   // webtx low-latency patch: see -b, default set below
++	int FifoSizeArg=-1; // webtx low-latency patch: see -F
+   char * endptr = NULL;
+ 	while(1)
+ 	{
+-		a = getopt(argc, argv, "i:f:s:m:p:h:ldt:");
++		a = getopt(argc, argv, "i:f:s:m:p:h:ldt:b:F:");
+ 	
+ 		if(a == -1) 
+ 		{
+@@ -121,6 +125,12 @@
+ 		case 'd': // dds mode
+ 			fdds=true;
+ 			break;
++		case 'b': // webtx low-latency patch: read burst size in complex samples
++			ReadBurst=atoi(optarg);
++			break;
++		case 'F': // webtx low-latency patch: DMA FIFO size in complex samples
++			FifoSizeArg=atoi(optarg);
++			break;
+ 		case 'p': // driver level (power)
+ 			drivedds=atof(optarg);
+ 			if (drivedds<0.0) {drivedds=0.0;}
+@@ -218,7 +228,14 @@
+ 
+ 	#define IQBURST 4000
+ 	int SR=48000;
+-	int FifoSize=IQBURST*4;
++	// webtx low-latency patch: -b/-F let a caller shrink the read burst and
++	// DMA FIFO below IQBURST/IQBURST*4; defaults are unchanged from upstream.
++	if (ReadBurst <= 0) ReadBurst = IQBURST;
++	if (ReadBurst > IQBURST) {
++		fprintf(stderr, "sendiq: -b must be between 1 and %d\n", IQBURST);
++		exit(1);
++	}
++	int FifoSize = (FifoSizeArg > 0) ? FifoSizeArg : IQBURST*4;
+ 	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize,MODE_IQ);
+ 	iqtest.SetPLLMasterLoop(3,4,0);
+ 
+@@ -264,7 +281,7 @@
+ 				case typeiq_i16:
+ 				{
+ 					static short IQBuffer[IQBURST*2];
+-					int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
++					int nbread=fread(IQBuffer,sizeof(short),ReadBurst*2,iqfile);
+ 					if(nbread>0)
+ 					{
+ 						for(int i=0;i<nbread/2;i++)
+@@ -289,7 +306,7 @@
+ 				case typeiq_u8:
+ 				{
+ 					static unsigned char IQBuffer[IQBURST*2];
+-					int nbread=fread(IQBuffer,sizeof(unsigned char),IQBURST*2,iqfile);
++					int nbread=fread(IQBuffer,sizeof(unsigned char),ReadBurst*2,iqfile);
+ 					
+ 					if(nbread>0)
+ 					{
+@@ -315,7 +332,7 @@
+ 				case typeiq_float:
+ 				{
+ 					static float IQBuffer[IQBURST*2];
+-					int nbread=fread(IQBuffer,sizeof(float),IQBURST*2,iqfile);
++					int nbread=fread(IQBuffer,sizeof(float),ReadBurst*2,iqfile);
+ 					if(nbread>0)
+ 					{
+ 						for(int i=0;i<nbread/2;i++)
+@@ -376,7 +393,7 @@
+ 				case typeiq_double:
+ 				{
+ 					static double IQBuffer[IQBURST*2];
+-					int nbread=fread(IQBuffer,sizeof(double),IQBURST*2,iqfile);
++					int nbread=fread(IQBuffer,sizeof(double),ReadBurst*2,iqfile);
+ 					//if(nbread==0) continue;
+ 					if(nbread>0)
+ 					{

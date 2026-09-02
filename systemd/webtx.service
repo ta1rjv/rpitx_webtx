@@ -1,0 +1,21 @@
+[Unit]
+Description=webtx - low-latency SDR transmitter control panel (rpitx)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=__WEBTX_DIR__
+ExecStart=/usr/bin/python3 -m webtx --config __WEBTX_DIR__/webtx.json
+Restart=on-failure
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+# Root is required for GPIO/DMA (/dev/mem) access by the RF sink - see
+# docs/DECISIONS.md ADR-006/008. If sink.kind is set to "null" (no RF
+# hardware, testing only) this may be changed to an unprivileged user.
+
+[Install]
+WantedBy=multi-user.target
