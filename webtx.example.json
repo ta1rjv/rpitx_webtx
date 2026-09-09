@@ -1,0 +1,52 @@
+{
+  "host": "0.0.0.0",
+  "port": 5000,
+  "tls": {
+    "enabled": true,
+    "cert": "certs/cert.pem",
+    "key": "certs/key.pem"
+  },
+  "rpitx_path": "/opt/rpitx",
+  "sink": {
+    "kind": "auto",
+    "binary": "",
+    "fifo_samples": 2048,
+    "burst_samples": 512,
+    "ppm": 0.0,
+    "harmonic": 1,
+    "dry_run": false
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "frame_ms": 10,
+    "jitter_target_ms": 30,
+    "jitter_max_ms": 120
+  },
+  "rf": {
+    "min_freq_hz": 5000,
+    "max_freq_hz": 1500000000,
+    "max_power": 7.0,
+    "default_freq_hz": 14200000,
+    "default_mode": "USB",
+    "allowed_ranges": []
+  },
+  "dsp": {
+    "ssb_low_hz": 300.0,
+    "ssb_high_hz": 2700.0,
+    "fm_deviation_hz": 2500.0,
+    "am_modulation_index": 0.85,
+    "am_carrier_level": 0.5,
+    "audio_hpf_hz": 200.0,
+    "hilbert_taps": 129,
+    "limiter_enabled": true,
+    "agc_enabled": true,
+    "agc_target": 0.35,
+    "agc_attack_ms": 5.0,
+    "agc_release_ms": 300.0
+  },
+  "log": {
+    "level": "INFO",
+    "file": ""
+  }
+}
+

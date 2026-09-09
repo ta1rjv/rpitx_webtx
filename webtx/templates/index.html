@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>webtx - RF Transmitter Control</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">webtx</span>
+    </div>
+    <div class="topbar-status" role="status" aria-live="polite">
+      <span class="chip" id="connectionChip" data-state="connecting">
+        <span class="chip-dot"></span><span class="chip-label">Connecting</span>
+      </span>
+      <span class="chip" id="tuneChip" data-state="idle" hidden>
+        <span class="chip-dot"></span><span class="chip-label">Tune</span>
+      </span>
+      <span class="chip chip-metric" id="latencyTotalChip" title="Total measured glass-to-air latency">
+        <span class="chip-label">Latency</span><span class="chip-value" id="latencyTotalValue">-- ms</span>
+      </span>
+      <span class="chip chip-metric" id="rttChip" title="WebSocket round-trip time">
+        <span class="chip-label">RTT</span><span class="chip-value" id="rttValue">-- ms</span>
+      </span>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="panel panel-vfo" aria-label="Frequency and band">
+      <div class="panel-head">
+        <h2>Frequency</h2>
+        <div class="vfo-switch" role="group" aria-label="VFO selection">
+          <button type="button" class="vfo-btn is-active" id="vfoABtn" data-vfo="A">VFO A</button>
+          <button type="button" class="vfo-btn" id="vfoBBtn" data-vfo="B">VFO B</button>
+          <button type="button" class="vfo-swap" id="vfoSwapBtn" title="Swap VFO A/B" aria-label="Swap VFO A and B">&#8646;</button>
+        </div>
+      </div>
+
+      <div class="vfo-readout" id="vfoReadout" role="group" aria-label="Frequency digits, click upper half to increase, lower half to decrease, or scroll">
+        <!-- digit spans injected by app.js -->
+      </div>
+      <p class="vfo-hint">Click a digit's top/bottom half or scroll over it to tune. Range: <span id="freqRangeHint">--</span></p>
+
+      <div class="row">
+        <label for="bandSelect">Band</label>
+        <select id="bandSelect"></select>
+      </div>
+    </section>
+
+    <section class="panel panel-mode" aria-label="Modulation mode">
+      <div class="panel-head"><h2>Mode</h2></div>
+      <div class="mode-switch" id="modeSwitch" role="group" aria-label="Modulation mode">
+        <button type="button" class="mode-btn" data-mode="USB">USB</button>
+        <button type="button" class="mode-btn" data-mode="LSB">LSB</button>
+        <button type="button" class="mode-btn" data-mode="FM">FM</button>
+        <button type="button" class="mode-btn" data-mode="AM">AM</button>
+      </div>
+    </section>
+
+    <section class="panel panel-mic" aria-label="Microphone">
+      <div class="panel-head">
+        <h2>Microphone</h2>
+        <span class="chip" id="micChip" data-state="unknown">
+          <span class="chip-dot"></span><span class="chip-label">Not enabled</span>
+        </span>
+      </div>
+      <button type="button" class="btn btn-primary" id="micEnableBtn">Enable microphone</button>
+      <div class="row" id="micDeviceRow" hidden>
+        <label for="micDeviceSelect">Input device</label>
+        <select id="micDeviceSelect"></select>
+      </div>
+      <div class="vu-meter">
+        <canvas id="vuCanvas" width="600" height="54" aria-hidden="true"></canvas>
+        <div class="vu-scale">
+          <span>-60</span><span>-40</span><span>-20</span><span>-6</span><span>0 dBFS</span>
+        </div>
+      </div>
+      <p class="hint" id="sampleRateHint">Sample rate: --</p>
+    </section>
+
+    <section class="panel panel-levels" aria-label="Levels">
+      <div class="panel-head"><h2>Levels</h2></div>
+      <div class="slider-row">
+        <label for="micGainSlider">Mic gain</label>
+        <input type="range" id="micGainSlider" min="0" max="4" step="0.05" value="1">
+        <output id="micGainValue" for="micGainSlider">1.00x</output>
+      </div>
+      <div class="slider-row">
+        <label for="txPowerSlider">TX power</label>
+        <input type="range" id="txPowerSlider" min="0.1" max="7" step="0.1" value="1">
+        <output id="txPowerValue" for="txPowerSlider">1.0</output>
+      </div>
+    </section>
+
+    <section class="panel panel-tx" aria-label="Transmit control">
+      <div class="panel-head">
+        <h2>Transmit</h2>
+        <span class="chip" id="txChip" data-state="rx">
+          <span class="chip-dot"></span><span class="chip-label">RX</span>
+        </span>
+      </div>
+      <button type="button" class="ptt-button" id="pttButton" disabled aria-pressed="false">
+        <span id="pttLabel">PTT</span>
+        <span class="ptt-hint">hold, or press Space</span>
+      </button>
+      <label class="lock-toggle">
+        <input type="checkbox" id="txLockToggle">
+        <span>Lock TX (push to toggle instead of hold)</span>
+      </label>
+    </section>
+
+    <section class="panel panel-telemetry" aria-label="Latency and telemetry">
+      <div class="panel-head"><h2>Latency</h2></div>
+      <div class="latency-bars" id="latencyBars">
+        <div class="latency-row" data-stage="net">
+          <span class="latency-name">Network</span>
+          <div class="latency-track"><div class="latency-fill"></div></div>
+          <span class="latency-num">-- ms</span>
+        </div>
+        <div class="latency-row" data-stage="jitter">
+          <span class="latency-name">Jitter buffer</span>
+          <div class="latency-track"><div class="latency-fill"></div></div>
+          <span class="latency-num">-- ms</span>
+        </div>
+        <div class="latency-row" data-stage="dsp">
+          <span class="latency-name">DSP</span>
+          <div class="latency-track"><div class="latency-fill"></div></div>
+          <span class="latency-num">-- ms</span>
+        </div>
+        <div class="latency-row" data-stage="sink">
+          <span class="latency-name">RF sink FIFO</span>
+          <div class="latency-track"><div class="latency-fill"></div></div>
+          <span class="latency-num">-- ms</span>
+        </div>
+      </div>
+
+      <div class="panel-head"><h2>Telemetry</h2></div>
+      <dl class="telemetry-grid">
+        <div><dt>Sink</dt><dd id="telSink">--</dd></div>
+        <div><dt>Buffer depth</dt><dd id="telJitterDepth">-- ms</dd></div>
+        <div><dt>Underruns</dt><dd id="telUnderruns">0</dd></div>
+        <div><dt>Overruns</dt><dd id="telOverruns">0</dd></div>
+        <div><dt>Frames/s</dt><dd id="telFrames">--</dd></div>
+        <div><dt>IQ peak</dt><dd id="telIqPeak">--</dd></div>
+        <div><dt>CPU</dt><dd id="telCpu">--</dd></div>
+        <div><dt>Dropped frames</dt><dd id="telDropped">0</dd></div>
+        <div><dt>TX elapsed</dt><dd id="telElapsed">00:00</dd></div>
+        <div><dt>Server</dt><dd id="telServerVersion">--</dd></div>
+      </dl>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Test/authorized use only. Verify licensing, output power and harmonic filtering before transmitting. See README.md.
+  </footer>
+
+  <div class="toast-container" id="toastContainer" aria-live="assertive"></div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
